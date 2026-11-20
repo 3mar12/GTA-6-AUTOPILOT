@@ -69,8 +69,8 @@ def main():
     WORK_DIR.mkdir(parents=True, exist_ok=True)
     clips = json.loads(Path("candidates.json").read_text())
     now = datetime.now(timezone.utc)
-    shortlist = sorted(clips, key=lambda c: views_per_hour(c, now), reverse=True)[:3]
-    summary(f"Matching clips: {len(clips)}. Shortlisted by average views/hour: {len(shortlist)}.")
+    shortlist = sorted(clips, key=lambda c: views_per_hour(c, now), reverse=True)[:9]
+    summary(f"Matching clips: {len(clips)}. Review limit (batches of 3 by views/hour): {len(shortlist)}.")
     if shortlist and not os.environ.get("GEMINI_API_KEY", "").strip():
         summary("Missing GEMINI_API_KEY for clip review.")
         raise RuntimeError("Missing GEMINI_API_KEY for clip review.")
@@ -78,6 +78,8 @@ def main():
     reviewed = 0
     with tempfile.TemporaryDirectory() as folder:
         for index, clip in enumerate(shortlist):
+            if index and index % 3 == 0 and best is not None:
+                break
             base = Path(folder) / str(index)
             try:
                 subprocess.run(["yt-dlp", "--no-playlist", "-S", "res,fps,br", "-o",
@@ -103,8 +105,17 @@ def main():
             reviewed += 1
             rate = views_per_hour(clip, now)
             summary(f"- {clip['url']} — {rate:.0f} views/hour, moment score {score}/10.")
-            if (review.get("is_gta6_footage") is not True or review.get("is_spoiler")
-                    or review.get("unsafe") or review.get("is_english") is False):
+            reasons = []
+            if review.get("is_gta6_footage") is not True:
+                reasons.append("GTA VI gameplay not confirmed")
+            if review.get("is_spoiler"):
+                reasons.append("story spoiler")
+            if review.get("unsafe"):
+                reasons.append("flagged by content review")
+            if review.get("is_english") is False:
+                reasons.append("non-English audio")
+            if reasons:
+                summary(f"Candidate {index + 1}: {', '.join(reasons)}.")
                 continue
             filters = layout_filter(review, info)
             if not filters:
