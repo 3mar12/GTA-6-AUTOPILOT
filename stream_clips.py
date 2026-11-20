@@ -405,13 +405,14 @@ Return ONLY JSON: {{"is_gta6_footage": bool, "is_spoiler": bool, "is_english": b
  "trim_end": number, "banner": str, "youtube_title": str, "caption": str, "x_text": str, "hashtags": [str]}}"""
 
 
-def ai_review(path: Path, clip: dict) -> dict | None:
+def ai_review(path: Path, clip: dict, extra_prompt: str = "") -> dict | None:
     """Gemini watches + listens (needed for the transcript). No AI that can hear it -> no post."""
     import gemini_writer
     if not env("GEMINI_API_KEY"):
         return None
     prompt = PROMPT.format(streamer=clip["streamer"], platform=clip["platform"].title(),
                            title=clip["title"], duration=probe(path)["duration"])
+    prompt += extra_prompt
     try:
         uploaded = gemini_writer._upload_video(path)
     except Exception as exc:  # noqa: BLE001
