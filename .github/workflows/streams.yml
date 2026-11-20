@@ -53,13 +53,18 @@ jobs:
       - name: Download clip with original audio
         if: env.CLIP_URL != ''
         run: |
+          if ! command -v ffprobe >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+          fi
           pipx run --spec yt-dlp yt-dlp --no-playlist \
-            -f 'best[ext=mp4][acodec!=none]' -o 'kai-preview.mp4' "$CLIP_URL"
+            -o 'kai-preview.%(ext)s' "$CLIP_URL"
+          ffprobe -v error -select_streams a:0 -show_entries stream=index \
+            -of csv=p=0 kai-preview.* | grep -q '[0-9]'
 
       - name: Save preview
         if: env.CLIP_URL != ''
         uses: actions/upload-artifact@v4
         with:
           name: kai-twitch-preview
-          path: kai-preview.mp4
+          path: kai-preview.*
           if-no-files-found: error
