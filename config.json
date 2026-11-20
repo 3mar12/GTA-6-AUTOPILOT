@@ -1,0 +1,1042 @@
+{
+  "brand": {
+    "display_name": "GTA VI Top Moments",
+    "handles": {
+      "youtube": "@GTAVI6TopMoments",
+      "instagram": "@gtavi_topmoments",
+      "x": "@GTAVIMomentz",
+      "tiktok": "@gta.vi.top.moment"
+    }
+  },
+  "timezone": "Europe/Istanbul",
+  "game": {
+    "launch_date": "2026-11-19",
+    "facts": "GTA VI is set in the state of Leonida (including Vice City) and stars Jason and Lucia. Platforms at launch: PS5 and Xbox Series X|S."
+  },
+  "schedule": [
+    {
+      "time": "09:50",
+      "type": "x_text_morning",
+      "platforms": [
+        "x"
+      ]
+    },
+    {
+      "time": "16:20",
+      "type": "x_question_nostalgia",
+      "platforms": [
+        "x"
+      ]
+    },
+    {
+      "time": "20:10",
+      "type": "long_video",
+      "platforms": [
+        "youtube"
+      ],
+      "every_days": 3,
+      "not_before": "2026-11-22T16:00:00Z",
+      "_note": "First long video published by hand on 2026-11-19; automatic ones start 2026-11-22 20:10 TRT, then every 3 days."
+    },
+    {
+      "time": "22:20",
+      "type": "x_daily_recap",
+      "platforms": [
+        "x"
+      ]
+    },
+    {
+      "time": "23:40",
+      "type": "vertical_clip",
+      "platforms": [
+        "instagram",
+        "tiktok",
+        "youtube",
+        "x"
+      ],
+      "every_days": 2
+    }
+  ],
+  "publishing": {
+    "routes": {
+      "youtube": [
+        "youtube_api"
+      ],
+      "instagram": [
+        "zernio",
+        "upload_post"
+      ],
+      "tiktok": [
+        "zernio",
+        "upload_post"
+      ],
+      "x": [
+        "x_api",
+        "x_browser",
+        "zernio",
+        "upload_post"
+      ]
+    },
+    "youtube_privacy": "public",
+    "youtube_category_id": "20",
+    "tiktok_privacy": "PUBLIC_TO_EVERYONE",
+    "first_comment": true,
+    "max_hashtags": {
+      "youtube": 5,
+      "instagram": 5,
+      "tiktok": 5,
+      "x": 3
+    }
+  },
+  "sources": {
+    "providers": [
+      "local",
+      "extra_urls",
+      "x_accounts",
+      "twitch",
+      "dailymotion",
+      "youtube"
+    ],
+    "launch_date": "2026-11-19",
+    "only_after_launch": false,
+    "extra_urls": [],
+    "search_queries": [
+      "GTA 6 funny moments",
+      "GTA 6 top 5 moments",
+      "GTA 6 top 10 moments",
+      "GTA 6 best moments",
+      "GTA 6 craziest moments",
+      "GTA 6 fails",
+      "GTA 6 funny fails",
+      "GTA 6 police chase",
+      "GTA 6 car chase",
+      "GTA 6 stunts",
+      "GTA 6 crazy stunts",
+      "GTA 6 free roam gameplay",
+      "GTA 6 open world gameplay",
+      "GTA 6 physics",
+      "GTA 6 ragdoll",
+      "GTA 6 things you missed",
+      "GTA 6 details",
+      "GTA 6 easter eggs gameplay",
+      "GTA 6 wanted level",
+      "GTA 6 6 star wanted level",
+      "GTA 6 shootout",
+      "GTA 6 rampage",
+      "GTA 6 NPC reactions",
+      "GTA 6 4K gameplay no commentary",
+      "GTA 6 Vice City free roam",
+      "GTA 6 crazy things you can do"
+    ],
+    "queries_per_run": 5,
+    "min_duration_sec": 50,
+    "max_duration_sec": 21600,
+    "section_length_sec": 120,
+    "clip_style": "auto",
+    "max_attempts": 8,
+    "time_budget_min": 25,
+    "required_title_terms": [
+      "gta 6",
+      "gta vi",
+      "gta6",
+      "gtavi",
+      "gta-6",
+      "grand theft auto vi",
+      "grand theft auto 6"
+    ],
+    "context_title_terms": [
+      "gameplay",
+      "game play",
+      "let's play",
+      "lets play",
+      "chase",
+      "chases",
+      "heist",
+      "shootout",
+      "police",
+      "cops",
+      "wanted",
+      "stunt",
+      "stunts",
+      "funny",
+      "moments",
+      "free roam",
+      "open world",
+      "4k",
+      "8k",
+      "60fps",
+      "no commentary",
+      "trailer",
+      "boss",
+      "combat",
+      "rtx",
+      "highlights",
+      "drive",
+      "car",
+      "fails",
+      "fail",
+      "top 5",
+      "top 10",
+      "top",
+      "physics",
+      "ragdoll",
+      "npc",
+      "details",
+      "easter egg",
+      "easter eggs",
+      "secret",
+      "secrets",
+      "hidden",
+      "things to do",
+      "things you can do",
+      "activities",
+      "pursuit",
+      "getaway",
+      "escape",
+      "crash",
+      "crashes",
+      "jump",
+      "jumps",
+      "missed",
+      "features",
+      "funniest",
+      "best"
+    ],
+    "blocked_title_terms": [
+      "gta 5",
+      "gta v",
+      "gtav",
+      "gta5",
+      "gta online",
+      "gta iv",
+      "gta 4",
+      "san andreas",
+      "gta sa",
+      "gta 3",
+      "gta iii",
+      "mod",
+      "mods",
+      "modded",
+      "modding",
+      "concept",
+      "fan made",
+      "fanmade",
+      "fan-made",
+      "fan trailer",
+      "fake",
+      "hoax",
+      "leak",
+      "leaks",
+      "leaked",
+      "datamine",
+      "datamined",
+      "rumor",
+      "rumors",
+      "rumour",
+      "prediction",
+      "predictions",
+      "reaction",
+      "reacts",
+      "react",
+      "reacting",
+      "explained",
+      "breakdown",
+      "analysis",
+      "news",
+      "podcast",
+      "interview",
+      "release date",
+      "price",
+      "preorder",
+      "pre-order",
+      "minecraft",
+      "roblox",
+      "fortnite",
+      "gmod",
+      "garry's mod",
+      "unreal engine",
+      "ue5",
+      "ai generated",
+      "in real life",
+      "irl",
+      "emulator",
+      "download",
+      "apk",
+      "mobile",
+      "android",
+      "ios",
+      "free fire",
+      "hack",
+      "cheats",
+      "unboxing",
+      "countdown",
+      "midnight launch",
+      "queue",
+      "line",
+      "store",
+      "shorts",
+      "#shorts",
+      "tiktok",
+      "live",
+      "livestream",
+      "stream",
+      "sim",
+      "simulator",
+      "roleplay",
+      "rp",
+      "fivem",
+      "lego",
+      "cartoon",
+      "animation",
+      "drawing",
+      "meme",
+      "asmr",
+      "remake",
+      "remastered",
+      "pc port",
+      "vs real life",
+      "comparison",
+      "ai",
+      "a.i",
+      "actress",
+      "actor",
+      "voice actor",
+      "billboard",
+      "miami",
+      "real life",
+      "trailer 3",
+      "teaser",
+      "theory",
+      "theories",
+      "everything we know",
+      "tout",
+      "test",
+      "review",
+      "memes",
+      "before gta 6",
+      "wait for gta 6",
+      "whilst you wait",
+      "while you wait",
+      "waiting for gta 6",
+      "walkthrough",
+      "playthrough",
+      "full game",
+      "story",
+      "story mode",
+      "cutscene",
+      "cutscenes",
+      "ending",
+      "endings",
+      "final mission",
+      "last mission",
+      "spoiler",
+      "spoilers",
+      "boss fight",
+      "dies",
+      "death of",
+      "full movie",
+      "all cutscenes",
+      "credits",
+      "chapter",
+      "mission 1",
+      "mission #1",
+      "prologue",
+      "epilogue",
+      "plot",
+      "lore"
+    ],
+    "preferred_title_terms": {
+      "no commentary": 2.0,
+      "4k": 1.0,
+      "chase": 2.0,
+      "shootout": 2.5,
+      "stunt": 2.0,
+      "60fps": 0.5,
+      "police": 1.5,
+      "funny": 3.0,
+      "crazy": 2.0,
+      "insane": 1.0,
+      "best moments": 3.0,
+      "rampage": 2.0,
+      "explosion": 2.0,
+      "crash": 1.5,
+      "wanted": 1.5,
+      "top 5": 3.0,
+      "top 10": 3.0,
+      "craziest": 2.5,
+      "fails": 2.5,
+      "free roam": 2.0,
+      "physics": 1.5,
+      "ragdoll": 1.5,
+      "secrets": 2.0,
+      "hidden": 1.5,
+      "things to do": 2.0,
+      "funniest": 3.0
+    },
+    "official_trailers": [
+      {
+        "title": "Grand Theft Auto VI: An Extended Look",
+        "url": "https://www.youtube.com/watch?v=tJbzMqJGH4k",
+        "duration": 1609
+      },
+      {
+        "title": "Grand Theft Auto VI Launch Trailer",
+        "url": "https://www.youtube.com/watch?v=rz1B4B2yBZY",
+        "duration": 91
+      },
+      {
+        "title": "Grand Theft Auto VI Trailer 2",
+        "url": "https://www.youtube.com/watch?v=VQRLujxTm3c",
+        "duration": 167
+      },
+      {
+        "title": "Grand Theft Auto VI Trailer 1",
+        "url": "https://www.youtube.com/watch?v=QdBZY2fkU-0",
+        "duration": 91
+      },
+      {
+        "title": "Grand Theft Auto VI Official Trailer 2",
+        "url": "https://www.dailymotion.com/video/x9j2dp6",
+        "duration": 166
+      },
+      {
+        "title": "Grand Theft Auto VI Official Trailer 1",
+        "url": "https://www.dailymotion.com/video/x8q8okj",
+        "duration": 91
+      }
+    ],
+    "strong_gameplay_terms": [
+      "gameplay",
+      "no commentary",
+      "walkthrough",
+      "playthrough",
+      "mission",
+      "cutscene",
+      "cutscenes",
+      "4k",
+      "let's play",
+      "lets play",
+      "part 1",
+      "part 2",
+      "part 3"
+    ],
+    "min_height": 720,
+    "max_age_days": 14,
+    "content_mix": {
+      "gameplay": 0.6,
+      "stream": 0.4
+    },
+    "stream_search_queries": [
+      "GTA 6 stream highlights",
+      "GTA 6 funniest stream moments",
+      "GTA 6 streamer funny moments",
+      "GTA 6 stream rage",
+      "GTA 6 twitch clips",
+      "GTA 6 streamers react funny",
+      "GTA 6 stream fails",
+      "GTA 6 kick stream highlights"
+    ],
+    "stream_allowed_terms": [
+      "live",
+      "livestream",
+      "stream",
+      "reaction",
+      "reacts",
+      "react",
+      "reacting"
+    ],
+    "stream_context_terms": [
+      "stream",
+      "streamer",
+      "streamers",
+      "twitch",
+      "kick",
+      "highlights",
+      "reaction",
+      "reacts",
+      "rage",
+      "live",
+      "vod"
+    ],
+    "twitch": {
+      "game_name": "Grand Theft Auto VI",
+      "clip_days": 3,
+      "min_clip_views": 300,
+      "min_clip_sec": 15,
+      "languages": [
+        "en"
+      ],
+      "include_vods": true,
+      "vod_period": "week",
+      "clip_bonus": 3.0
+    },
+    "tour": {
+      "enabled": true,
+      "slices": 3,
+      "slice_sec": 110,
+      "whole_video_min_sec": 150,
+      "whole_video_max_sec": 330,
+      "_note": "Long videos (>= slices*slice_sec*2) -> 3 slices joined. For countdown formats (top 5s), a 150-660 s video is used as one reel of up to whole_video_max_sec."
+    },
+    "x_accounts": [
+      "GtaGameClips"
+    ],
+    "x_accounts_bonus": 3.0,
+    "x_min_sec": 15,
+    "x_max_sec": 600,
+    "x_cache_hours": 4,
+    "_x_note": "x_accounts: video posts from these X accounts join the footage pool (credited as '<account> on X'). Read with the X_COOKIES login, at most every x_cache_hours. Every clip passes the same AI checks.",
+    "blocked_channels": [
+      "IGN",
+      "GameSpot",
+      "Rockstar Games",
+      "PlayStation",
+      "Xbox",
+      "PC Gamer",
+      "Kotaku",
+      "Eurogamer",
+      "GamesRadar",
+      "GamesRadar+",
+      "Polygon",
+      "Digital Foundry",
+      "TheGamer",
+      "Screen Rant",
+      "CBR",
+      "Dexerto",
+      "ESPN",
+      "BBC",
+      "CNN",
+      "Take-Two Interactive",
+      "Game Informer",
+      "VGC",
+      "IGN Entertainment"
+    ]
+  },
+  "quality_gate": {
+    "min_hype_score": 7,
+    "reject_facecam": true,
+    "require_ai_check_for_search": true,
+    "reject_narrator": true,
+    "backup_hype_score": 6,
+    "reject_spoilers": true,
+    "min_script_lines": 4,
+    "min_script_words": 35,
+    "min_script_lines_stream": 2,
+    "min_script_words_stream": 12,
+    "block_brand_names": false
+  },
+  "gemini": {
+    "models": [
+      "gemini-3.8-flash"
+    ],
+    "timeout_sec": 50,
+    "watch_video": true,
+    "max_total_sec": 240,
+    "fallback_frames": 8,
+    "tour_frames": 12,
+    "use_pro": true
+  },
+  "voice": {
+    "engine": "gemini",
+    "gemini_tts_voice": "Fenrir",
+    "gemini_tts_models": [],
+    "voices": [
+      "en-US-AndrewNeural",
+      "en-US-AndrewMultilingualNeural",
+      "en-US-GuyNeural"
+    ],
+    "rate": "+23%",
+    "pitch": "+2Hz",
+    "volume": "+10%",
+    "robot_fallback": false,
+    "_note": "Human voice only: Gemini TTS voice 'Fenrir'. Gemini receives ONLY the script (style instructions would be read out loud) - the YouTuber style comes from the AI-written script. If Gemini fails the video is NOT posted; set robot_fallback to true to allow the Microsoft voices below instead."
+  },
+  "video": {
+    "source_clip_sec": 52,
+    "max_duration_sec": 90,
+    "font": "Montserrat",
+    "caption_y": 1450,
+    "highlight_color_ass": "&H0000F0FF",
+    "foreground_zoom": 1.3,
+    "game_audio_volume": 0.9,
+    "cta_text": "FOLLOW FOR DAILY GTA 6 MOMENTS",
+    "preset": "veryfast",
+    "crf": 20,
+    "duration_sec": 60,
+    "voice_volume": 1.25,
+    "min_clip_sec": 50,
+    "tour_max_sec": 90,
+    "tour_min_shots": 4,
+    "game_audio_volume_tour": 0.4,
+    "fx": {
+      "teaser_sec": 1.2,
+      "zoom": true,
+      "zoom_amount": 0.22,
+      "sfx": true,
+      "sfx_volume": 0.55,
+      "music_dir": "music",
+      "music_volume": 0.09,
+      "_note": "Cold open: a 1.2 s flash of the payoff moment. Zoom punch-in + boom on the payoff, whoosh on cuts (sound effects are generated, no copyright). Background music only if you add your own royalty-free tracks to the music/ folder."
+    }
+  },
+  "blocked_keywords": [
+    "nsfw",
+    "nude",
+    "pirated",
+    "crack",
+    "exploit",
+    "beta build",
+    "source code"
+  ],
+  "hashtags_pool": [
+    [
+      "#GTA6",
+      "#GTAVI",
+      "#GrandTheftAutoVI",
+      "#GamingClips"
+    ],
+    [
+      "#GTA6",
+      "#ViceCity",
+      "#TopMoments",
+      "#GamingClips"
+    ],
+    [
+      "#GTA6",
+      "#GTAVI",
+      "#Leonida",
+      "#GamingCommunity"
+    ],
+    [
+      "#GTA6",
+      "#GTAVITopMoments",
+      "#ViralGaming",
+      "#OpenWorld"
+    ]
+  ],
+  "ai_fallback": {
+    "providers": [
+      "github",
+      "gemma",
+      "openrouter",
+      "nvidia",
+      "sambanova",
+      "cerebras",
+      "groq",
+      "mistral"
+    ],
+    "models": {
+      "openrouter": [],
+      "nvidia": [],
+      "groq": [],
+      "mistral": [],
+      "github": [],
+      "gemma": [],
+      "cerebras": [
+        "gpt-oss-120b",
+        "qwen-3.8-27b"
+      ],
+      "sambanova": [
+        "gpt-oss-120b",
+        "GLM-5.3",
+        "gemma-4-31B-it"
+      ]
+    },
+    "max_models_per_provider": 4,
+    "max_total_sec": 240,
+    "_note": "Free backup AIs. 'providers' = order when frames are sent (vision); 'text_providers' = order for text-only jobs (critic, packaging). Cerebras / SambaNova need free keys (CEREBRAS_API_KEY, SAMBANOVA_API_KEY).",
+    "text_providers": [
+      "cerebras",
+      "groq",
+      "sambanova",
+      "github",
+      "nvidia",
+      "mistral",
+      "gemma",
+      "openrouter"
+    ]
+  },
+  "x_text_hashtags": [
+    "#GTA6",
+    "#GTAVI"
+  ],
+  "formats": {
+    "enabled": true,
+    "_note": "Every video run makes the NEXT format in this list (position saved in queue/format_rotation.json). Set \"enabled\": false on one to skip it.",
+    "rotation": [
+      {
+        "id": "top5_funny",
+        "name": "Top 5 funniest moments",
+        "kind": "gameplay",
+        "countdown": 5,
+        "brief": "The 5 funniest moments in the footage: fails, ragdolls, NPC reactions, chaos, dumb luck. Funny and a bit of roasting, every item ends on a punchline.",
+        "banner_example": "TOP 5 FUNNIEST GTA 6 MOMENTS",
+        "title_example": "Top 5 FUNNIEST Moments In GTA 6",
+        "queries": [
+          "GTA 6 funny moments",
+          "GTA 6 funniest moments",
+          "GTA 6 fails",
+          "GTA 6 funny fails",
+          "GTA 6 NPC reactions",
+          "GTA 6 ragdoll physics",
+          "GTA 6 best moments"
+        ],
+        "title_terms": [
+          "funny",
+          "funniest",
+          "fail",
+          "fails",
+          "ragdoll",
+          "npc",
+          "moments"
+        ],
+        "series": "GTA 6 Funniest Moments",
+        "keywords": "GTA 6 funny moments fails",
+        "hashtags": [
+          "#GTA6Funny",
+          "#GTA6Fails"
+        ]
+      },
+      {
+        "id": "car_chases",
+        "name": "Fast car chases",
+        "kind": "gameplay",
+        "brief": "High-speed car and police chases: near misses, crashes, cops boxing you in, wanted stars, the escape. Fast and tense, react like you're in the passenger seat and point out what the cops do and how the driver gets away.",
+        "banner_example": "THIS GTA 6 CHASE IS INSANE",
+        "title_example": "This GTA 6 Police Chase Went CRAZY",
+        "queries": [
+          "GTA 6 police chase",
+          "GTA 6 car chase",
+          "GTA 6 high speed chase",
+          "GTA 6 cop chase",
+          "GTA 6 wanted level chase",
+          "GTA 6 5 star wanted level",
+          "GTA 6 getaway"
+        ],
+        "title_terms": [
+          "chase",
+          "pursuit",
+          "police",
+          "cops",
+          "wanted",
+          "getaway",
+          "escape"
+        ],
+        "series": "GTA 6 Car Chases",
+        "keywords": "GTA 6 police chase car chase",
+        "hashtags": [
+          "#GTA6PoliceChase",
+          "#GTA6Cars"
+        ]
+      },
+      {
+        "id": "top5_things_to_do",
+        "name": "Top 5 things to do in GTA 6",
+        "kind": "gameplay",
+        "countdown": 5,
+        "brief": "5 fun things a player can actually do in the open world (activities, vehicles, side stuff, shops, wildlife, mechanics), told in 'you' form so viewers want to try them. Compare with GTA 5 when the difference is obvious on screen.",
+        "banner_example": "5 THINGS TO DO IN GTA 6",
+        "title_example": "5 Things You NEED To Try In GTA 6",
+        "queries": [
+          "GTA 6 things to do",
+          "GTA 6 things you can do",
+          "GTA 6 crazy things you can do",
+          "GTA 6 free roam gameplay",
+          "GTA 6 open world gameplay",
+          "GTA 6 activities",
+          "GTA 6 side activities"
+        ],
+        "title_terms": [
+          "things to do",
+          "things you can do",
+          "free roam",
+          "open world",
+          "activities"
+        ],
+        "series": "GTA 6 Things To Do",
+        "keywords": "GTA 6 things to do free roam",
+        "hashtags": [
+          "#GTA6Tips",
+          "#GTA6Gameplay"
+        ]
+      },
+      {
+        "id": "secrets",
+        "name": "Secrets and hidden details",
+        "kind": "gameplay",
+        "brief": "Hidden details, easter eggs and secret mechanics in the WORLD that most players miss ('you probably walked past this'). Never story secrets or plot. Only claim what you can actually see.",
+        "banner_example": "GTA 6 SECRETS YOU MISSED",
+        "title_example": "GTA 6 Secrets You Probably MISSED",
+        "queries": [
+          "GTA 6 secrets no commentary",
+          "GTA 6 hidden details no commentary",
+          "GTA 6 easter eggs no commentary",
+          "GTA 6 small details gameplay no commentary",
+          "GTA 6 free roam details 4K no commentary",
+          "GTA 6 easter egg gameplay"
+        ],
+        "title_terms": [
+          "secret",
+          "secrets",
+          "hidden",
+          "easter egg",
+          "easter eggs",
+          "details",
+          "missed",
+          "no commentary"
+        ],
+        "series": "GTA 6 Secrets",
+        "keywords": "GTA 6 secrets hidden details easter eggs",
+        "hashtags": [
+          "#GTA6Secrets",
+          "#GTA6EasterEggs"
+        ]
+      },
+      {
+        "id": "stunts_crashes",
+        "name": "Crazy stunts and crashes",
+        "kind": "gameplay",
+        "brief": "The wildest stunts, jumps and crashes: big air, bikes, flips, brutal physics. Hype the build-up, then react to the landing or the crash.",
+        "banner_example": "GTA 6 CRASH PHYSICS ARE BRUTAL",
+        "title_example": "GTA 6 Crash Physics Are INSANE",
+        "queries": [
+          "GTA 6 stunts",
+          "GTA 6 crazy stunts",
+          "GTA 6 car crashes",
+          "GTA 6 crash physics",
+          "GTA 6 jumps",
+          "GTA 6 bike stunts"
+        ],
+        "title_terms": [
+          "stunt",
+          "stunts",
+          "crash",
+          "crashes",
+          "jump",
+          "jumps",
+          "physics"
+        ],
+        "series": "GTA 6 Stunts",
+        "keywords": "GTA 6 stunts crashes physics",
+        "hashtags": [
+          "#GTA6Stunts",
+          "#GTA6Physics"
+        ]
+      },
+      {
+        "id": "stream_reactions",
+        "name": "Funniest streamer reactions",
+        "kind": "stream",
+        "brief": "A streamer's funniest or wildest reaction to something that happens in GTA 6. Set up what's about to happen, then let the reaction land.",
+        "banner_example": "HE WAS NOT READY FOR THIS",
+        "title_example": "Streamer Was NOT Ready For This GTA 6 Moment",
+        "queries": [
+          "GTA 6 stream highlights",
+          "GTA 6 funniest stream moments",
+          "GTA 6 streamer funny moments",
+          "GTA 6 stream rage",
+          "GTA 6 twitch clips",
+          "GTA 6 stream fails"
+        ],
+        "title_terms": [
+          "funny",
+          "funniest",
+          "rage",
+          "fails",
+          "highlights"
+        ],
+        "series": "GTA 6 Streamer Moments",
+        "keywords": "GTA 6 streamer funny reactions",
+        "hashtags": [
+          "#GTA6Stream",
+          "#GTA6Funny"
+        ]
+      }
+    ]
+  },
+  "learning": {
+    "enabled": true,
+    "min_samples": 2,
+    "explore": 0.25,
+    "no_repeat": 2,
+    "min_age_hours": 12,
+    "refresh_hours": 6,
+    "track_days": 10,
+    "max_fetch_per_run": 6,
+    "_note": "Pulls each video's YouTube views/likes/comments (free, via yt-dlp) and favours the formats that perform best, while still exploring the others."
+  },
+  "stream_clips": {
+    "enabled": true,
+    "_note": "Viral GTA 6 stream clips (Twitch, Kick, YouTube stream recordings' most-replayed moment) posted with the streamer's real voice + subtitles, no AI voice. Runs every 30 min from .github/workflows/streams.yml. Finds the most-watched GTA 6 streams first (Twitch/Kick live lists, big streamers' YouTube channels), then clips their best moments.",
+    "platforms": [
+      "tiktok",
+      "instagram",
+      "x"
+    ],
+    "max_per_day": 4,
+    "min_gap_minutes": 90,
+    "same_streamer_gap_hours": 3,
+    "max_tries": 3,
+    "window_hours": 6,
+    "min_views": 1000,
+    "min_views_per_hour": 500,
+    "min_sec": 8,
+    "max_sec": 180,
+    "languages": [
+      "en"
+    ],
+    "min_hype": 7,
+    "min_height": 720,
+    "twitch": true,
+    "twitch_game": "Grand Theft Auto VI",
+    "kick": true,
+    "kick_category_slugs": [
+      "grand-theft-auto-vi"
+    ],
+    "youtube_vods": true,
+    "youtube_queries": [
+      "GTA 6 stream",
+      "GTA 6 livestream",
+      "GTA 6 stream highlights"
+    ],
+    "youtube_min_views": 10000,
+    "youtube_max_videos": 3,
+    "youtube_max_age_hours": 72,
+    "youtube_clip_sec": 40,
+    "youtube_velocity_factor": 0.2,
+    "zoom": 1.6,
+    "audio_volume": 1.0,
+    "hashtags": [
+      "#GTA6Stream",
+      "#GTA6Funny"
+    ],
+    "x_accounts": [
+      "IShowSpeedHQ"
+    ],
+    "x_cache_hours": 2,
+    "top_streams": 10,
+    "kick_channels": [
+      "adinross",
+      "xqc",
+      "amouranth",
+      "iceposeidon",
+      "n3on",
+      "sneako"
+    ],
+    "youtube_channels": [
+      "@IShowSpeed",
+      "@KaiCenatLive",
+      "@xQcOW",
+      "@FaZeRug"
+    ],
+    "kick_languages": [
+      "english",
+      "en"
+    ],
+    "max_output_sec": 90,
+    "viral_bar": {
+      "_note": "A clip is 'viral' when it has at least min_views AND min_views_per_hour. Views differ a lot per platform.",
+      "x": {
+        "min_views": 50000,
+        "min_views_per_hour": 5000
+      },
+      "twitch": {
+        "min_views": 1000,
+        "min_views_per_hour": 400
+      },
+      "kick": {
+        "min_views": 300,
+        "min_views_per_hour": 150
+      },
+      "youtube": {
+        "min_views": 10000,
+        "min_views_per_hour": 0
+      }
+    },
+    "famous_min_viewers": 5000,
+    "max_repeated_frames": 0.2,
+    "famous_streamers": [
+      "IShowSpeed",
+      "KaiCenat",
+      "caseoh_",
+      "xQc",
+      "Jynxzi",
+      "Fanum",
+      "Lacy",
+      "AdinRoss",
+      "N3on",
+      "Jerma985",
+      "BruceDropEmOff",
+      "Valkyrae",
+      "Agent00",
+      "DukeDennis",
+      "Sketch",
+      "PlaqueBoyMax",
+      "ExtraEmily",
+      "Ludwig",
+      "summit1g",
+      "shroud",
+      "TimTheTatman",
+      "DrLupo",
+      "NICKMERCS",
+      "Sneako",
+      "StableRonaldo",
+      "JasonTheWeen",
+      "Cuffem",
+      "IcePoseidon",
+      "PaymoneyWubby",
+      "Tyler1",
+      "Pokimane",
+      "HasanAbi",
+      "Mizkif",
+      "Emiru",
+      "Sodapoppin",
+      "MoistCr1TiKaL",
+      "penguinz0",
+      "Asmongold",
+      "zackrawrr",
+      "Mr_Mammal",
+      "YourRAGE",
+      "yourragegaming",
+      "Berleezy",
+      "TypicalGamer",
+      "Maximilian_DOOD",
+      "39daph",
+      "CohhCarnage",
+      "Nmplol",
+      "Squeex",
+      "Robcdee",
+      "ohnePixel"
+    ],
+    "_famous_note": "Only famous English-speaking streamers: this list, the X clip accounts, or a top English live stream with famous_min_viewers+ viewers right now. The AI also rejects non-English clips."
+  },
+  "long_video": {
+    "enabled": true,
+    "_note": "Daily 5-10 min YouTube countdown of the day's best GTA 6 stream moments (Twitch, Kick, X clip accounts). Replaces one Short so YouTube's free quota (about 6 uploads/day) still fits: 4 Shorts + 1 long video.",
+    "window_hours": 24,
+    "top_streams": 15,
+    "candidates": 40,
+    "max_per_streamer": 2,
+    "review_batch": 6,
+    "min_hype": 6,
+    "target_sec": 480,
+    "min_sec": 240,
+    "max_moments": 15,
+    "teaser_sec": 4.0,
+    "outro_sec": 7.0,
+    "preset": "veryfast",
+    "crf": 21,
+    "max_repeated_frames": 0.2
+  },
+  "whisper": {
+    "enabled": true,
+    "model": "small",
+    "threads": 4,
+    "_note": "Open-source speech-to-text running on the GitHub runner (free, no key). 'small' also detects the spoken language (non-English clips are dropped); 'small.en' is English-only and a bit more accurate."
+  },
+  "critic": {
+    "enabled": true,
+    "_note": "A second free AI (GPT-4.1 via GitHub Models first) rewrites titles / banners / hooks for more clicks without inventing anything; originals are kept if a rewrite breaks the rules."
+  },
+  "_schedule_note": "Owner's choice (2026-11-19, after YouTube's upload limit): 1 Short every 2 days (23:40 slot), 1 long video every 3 days (20:10 slot). every_days counts from the last successful post."
+}
