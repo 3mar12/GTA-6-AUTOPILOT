@@ -9,8 +9,12 @@ permissions:
 jobs:
   preview:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: Find a recent GTA VI clip from Kai Cenat
         env:
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
@@ -40,34 +44,23 @@ jobs:
             --data-urlencode "ended_at=$(date -u +%FT%TZ)" \
             --data-urlencode 'first=100')
 
-          url=$(jq -r --arg game "$game" \
-            '[.data[] | select(.game_id == $game)][0].url // empty' <<< "$clips")
+          jq --arg game "$game" '[.data[] | select(.game_id == $game)]' <<< "$clips" > candidates.json
 
-          if [[ -z "$url" ]]; then
-            echo "No GTA VI clip found among Kai Cenat's top 100 clips this week." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "CLIP_URL=$url" >> "$GITHUB_ENV"
-            echo "Selected clip: $url" >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Download clip with original audio
-        if: env.CLIP_URL != ''
+      - name: Install preview tools
         run: |
-          if ! command -v ffprobe >/dev/null; then
-            sudo apt-get update -qq && sudo apt-get install -y ffmpeg
-          fi
-          pipx run --spec yt-dlp yt-dlp --no-playlist -S 'res,fps,br' \
-            -o 'kai-preview.%(ext)s' "$CLIP_URL"
-          resolution=$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height \
-            -of csv=s=x:p=0 kai-preview.*)
-          echo "Downloaded resolution: $resolution" >> "$GITHUB_STEP_SUMMARY"
-          ffprobe -v error -select_streams a:0 -show_entries stream=index \
-            -of csv=p=0 kai-preview.* | grep -q '[0-9]'
+          sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+          python -m pip install -r requirements.txt
+
+      - name: Review and trim the best moment
+        id: review
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python kai_preview.py
 
       - name: Save preview
-        if: env.CLIP_URL != ''
+        if: steps.review.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: kai-twitch-preview
-          path: kai-preview.*
+          path: kai-preview.mp4
           if-no-files-found: error
