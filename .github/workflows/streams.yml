@@ -1,1 +1,65 @@
-paste this exact line
+name: Preview Kai Cenat GTA VI clip
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Find a recent GTA VI clip from Kai Cenat
+        env:
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          : "${TWITCH_CLIENT_ID:?Add TWITCH_CLIENT_ID to Actions secrets}"
+          : "${TWITCH_CLIENT_SECRET:?Add TWITCH_CLIENT_SECRET to Actions secrets}"
+
+          token=$(curl -fsS -X POST https://id.twitch.tv/oauth2/token \
+            --data-urlencode "client_id=$TWITCH_CLIENT_ID" \
+            --data-urlencode "client_secret=$TWITCH_CLIENT_SECRET" \
+            --data-urlencode "grant_type=client_credentials" | jq -er '.access_token')
+          echo "::add-mask::$token"
+
+          twitch() {
+            curl -fsSG "https://api.twitch.tv/helix/$1" \
+              -H "Client-ID: $TWITCH_CLIENT_ID" \
+              -H "Authorization: Bearer $token" "${@:2}"
+          }
+
+          channel=$(twitch users --data-urlencode 'login=kaicenat' | jq -er '.data[0].id')
+          game=$(twitch games --data-urlencode 'name=Grand Theft Auto VI' | jq -er '.data[0].id')
+          clips=$(twitch clips \
+            --data-urlencode "broadcaster_id=$channel" \
+            --data-urlencode "started_at=$(date -u -d '7 days ago' +%FT%TZ)" \
+            --data-urlencode "ended_at=$(date -u +%FT%TZ)" \
+            --data-urlencode 'first=100')
+
+          url=$(jq -r --arg game "$game" \
+            '[.data[] | select(.game_id == $game)][0].url // empty' <<< "$clips")
+
+          if [[ -z "$url" ]]; then
+            echo "No GTA VI clip found among Kai Cenat's top 100 clips this week." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "CLIP_URL=$url" >> "$GITHUB_ENV"
+            echo "Selected clip: $url" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Download clip with original audio
+        if: env.CLIP_URL != ''
+        run: |
+          pipx run --spec yt-dlp yt-dlp --no-playlist \
+            -f 'best[ext=mp4][acodec!=none]' -o 'kai-preview.mp4' "$CLIP_URL"
+
+      - name: Save preview
+        if: env.CLIP_URL != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: kai-twitch-preview
+          path: kai-preview.mp4
+          if-no-files-found: error
