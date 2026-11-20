@@ -72,14 +72,22 @@ def main():
             summary("No eligible GTA VI moment found.")
             return
         _, path, start, end, clip = best
+        end = min(end, start + 179)
+        source = probe(path)
+        filters = "setsar=1"
+        if source["width"] * 16 != source["height"] * 9:
+            filters = ("scale=1080:1920:force_original_aspect_ratio=decrease:force_divisible_by=2,"
+                       "pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1")
         output = Path("kai-preview.mp4")
         subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", str(start), "-i", str(path),
-                        "-t", str(end - start), "-map", "0:v:0", "-map", "0:a:0", "-c:v", "libx264",
+                        "-t", str(end - start), "-map", "0:v:0", "-map", "0:a:0", "-vf", filters, "-pix_fmt", "yuv420p", "-c:v", "libx264",
                         "-preset", "veryfast", "-crf", "17", "-c:a", "aac", "-b:a", "192k",
                         "-movflags", "+faststart", str(output)], check=True)
         info = probe(output)
         if not info["has_audio"] or info["duration"] <= 0:
             raise RuntimeError("Preview is missing audio or has no duration.")
+        if info["width"] * 16 != info["height"] * 9 or info["duration"] > 180:
+            raise RuntimeError("Rendered preview exceeds Shorts duration or has the wrong aspect ratio.")
         summary(f"Selected clip: {clip['url']} ({start:.1f}–{end:.1f}s)")
         summary(f"Downloaded resolution: {info['width']}x{info['height']}")
         with open(os.environ["GITHUB_OUTPUT"], "a") as out:
