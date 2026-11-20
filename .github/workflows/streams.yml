@@ -56,8 +56,11 @@ jobs:
           if ! command -v ffprobe >/dev/null; then
             sudo apt-get update -qq && sudo apt-get install -y ffmpeg
           fi
-          pipx run --spec yt-dlp yt-dlp --no-playlist \
+          pipx run --spec yt-dlp yt-dlp --no-playlist -S 'res,fps,br' \
             -o 'kai-preview.%(ext)s' "$CLIP_URL"
+          resolution=$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height \
+            -of csv=s=x:p=0 kai-preview.*)
+          echo "Downloaded resolution: $resolution" >> "$GITHUB_STEP_SUMMARY"
           ffprobe -v error -select_streams a:0 -show_entries stream=index \
             -of csv=p=0 kai-preview.* | grep -q '[0-9]'
 
