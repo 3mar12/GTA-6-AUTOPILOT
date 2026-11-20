@@ -567,7 +567,7 @@ def main() -> int:
         return 1
     log.info("Slot %s done ✅", sid)
     return 0
-    prepare underscore only = True
+    
 
 if __name__ == "__main__":
     sys.exit(main())
