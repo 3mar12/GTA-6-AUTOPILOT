@@ -10,6 +10,49 @@ from common import WORK_DIR, probe, setup_logging
 from stream_clips import ai_review
 
 
+LAYOUT_PROMPT = """
+In the same JSON, describe the visible layout throughout the chosen moment.
+Return layout="stacked" only when the webcam already spans the top of a vertical
+frame and gameplay fills the bottom. For a stable visible webcam and gameplay
+in another arrangement return layout="crop", with camera_box and game_box.
+Both boxes are [left, top, right, bottom] in 0..1000 coordinates of the entire
+frame. Include the streamer's whole webcam panel and choose a separate contiguous
+gameplay region around the action, excluding the webcam. If either panel is
+missing, changes position during the moment, or is unclear, return layout="unknown".
+"""
+
+
+def crop_box(box, width, height):
+    if not isinstance(box, list) or len(box) != 4:
+        return None
+    if not all(type(v) in (int, float) and 0 <= v <= 1000 for v in box):
+        return None
+    left, top, right, bottom = [int(v * size / 1000) // 2 * 2
+                                for v, size in zip(box, (width, height, width, height))]
+    if right - left < 16 or bottom - top < 16:
+        return None
+    return left, top, right, bottom
+
+
+def layout_filter(review, info):
+    width, height = info["width"], info["height"]
+    if review.get("layout") == "stacked" and width * 16 == height * 9:
+        return "[0:v]setsar=1[out]"
+    camera = crop_box(review.get("camera_box"), width, height)
+    game = crop_box(review.get("game_box"), width, height)
+    if review.get("layout") != "crop" or not camera or not game:
+        return None
+    if max(camera[0], game[0]) < min(camera[2], game[2]) and max(camera[1], game[1]) < min(camera[3], game[3]):
+        return None
+    panels = []
+    for name, box, panel_height in (("cam", camera, 640), ("game", game, 1280)):
+        left, top, right, bottom = box
+        panels.append(f"[{name}]crop={right-left}:{bottom-top}:{left}:{top},"
+                      f"scale=1080:{panel_height}:force_original_aspect_ratio=increase,"
+                      f"crop=1080:{panel_height},setsar=1[{name}out]")
+    return ";".join(["[0:v]split[cam][game]", *panels, "[camout][gameout]vstack[out]"])
+
+
 def summary(message):
     with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
         print(message, file=out)
@@ -44,7 +87,7 @@ def main():
                 if not info["has_audio"]:
                     summary(f"Candidate {index + 1}: no readable audio stream.")
                     continue
-                review = ai_review(path, {**clip, "streamer": "Kai Cenat", "platform": "twitch"})
+                review = ai_review(path, {**clip, "streamer": "Kai Cenat", "platform": "twitch"}, LAYOUT_PROMPT)
                 if not review:
                     summary(f"Candidate {index + 1}: Gemini returned no video review. See the review step log.")
                     continue
@@ -63,24 +106,23 @@ def main():
             if (review.get("is_gta6_footage") is not True or review.get("is_spoiler")
                     or review.get("unsafe") or review.get("is_english") is False):
                 continue
+            filters = layout_filter(review, info)
+            if not filters:
+                summary(f"Candidate {index + 1}: no reliable camera/gameplay layout.")
+                continue
             rank = (score, rate)
             if best is None or rank > best[0]:
-                best = (rank, path, start, end, clip)
+                best = (rank, path, start, end, clip, filters)
         if shortlist and not reviewed:
             raise RuntimeError("Could not download and review any shortlisted clip.")
         if best is None:
             summary("No eligible GTA VI moment found.")
             return
-        _, path, start, end, clip = best
+        _, path, start, end, clip, filters = best
         end = min(end, start + 179)
-        source = probe(path)
-        filters = "setsar=1"
-        if source["width"] * 16 != source["height"] * 9:
-            filters = ("scale=1080:1920:force_original_aspect_ratio=decrease:force_divisible_by=2,"
-                       "pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1")
         output = Path("kai-preview.mp4")
         subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", str(start), "-i", str(path),
-                        "-t", str(end - start), "-map", "0:v:0", "-map", "0:a:0", "-vf", filters, "-pix_fmt", "yuv420p", "-c:v", "libx264",
+                        "-t", str(end - start), "-filter_complex", filters, "-map", "[out]", "-map", "0:a:0", "-pix_fmt", "yuv420p", "-c:v", "libx264",
                         "-preset", "veryfast", "-crf", "17", "-c:a", "aac", "-b:a", "192k",
                         "-movflags", "+faststart", str(output)], check=True)
         info = probe(output)
