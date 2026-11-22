@@ -16,6 +16,13 @@ Return sexual_content_status="clear" only if you can confidently exclude nudity
 and sexual scenes throughout. Return "present" for any such imagery, even briefly,
 including animated game characters. Return "uncertain" for ambiguous imagery or
 incomplete visibility that prevents a decision. Evaluate this before trimming.
+Also return kai_primary, no_logos and fair_portrayal as JSON booleans.
+Evaluate the entire proposed cut including one second of extra context at each end.
+kai_primary is true only if Kai is present in the edit itself and his reaction,
+quote or action is its primary focus beyond the intro. no_logos requires no
+visible logos or watermarks anywhere in the cut. fair_portrayal requires the cut
+to preserve context and avoid negative portrayals, hate farming or false narratives.
+For any of these checks use false when uncertain.
 In the same JSON, describe the visible layout throughout the chosen moment.
 Return layout="stacked" only when the webcam already spans the top of a vertical
 frame and gameplay fills the bottom. For a stable visible webcam and gameplay
@@ -73,6 +80,8 @@ def main():
     setup_logging()
     WORK_DIR.mkdir(parents=True, exist_ok=True)
     clips = json.loads(Path("candidates.json").read_text())
+    # Helix timestamps are UTC. Clip creation is an initial filter, not proof of VOD age.
+    clips = [clip for clip in clips if clip["created_at"][:10] >= "2026-11-18"]
     now = datetime.now(timezone.utc)
     shortlist = sorted(clips, key=lambda c: views_per_hour(c, now), reverse=True)[:9]
     summary(f"Matching clips: {len(clips)}. Review limit (batches of 3 by views/hour): {len(shortlist)}.")
@@ -110,7 +119,11 @@ def main():
             reviewed += 1
             rate = views_per_hour(clip, now)
             summary(f"- {clip['url']} — {rate:.0f} views/hour, moment score {score}/10.")
-            reasons = []
+            reasons = [reason for key, reason in (
+                ("kai_primary", "Kai not confirmed as primary focus"),
+                ("no_logos", "logo-free edit not confirmed"),
+                ("fair_portrayal", "fair portrayal not confirmed"),
+            ) if review.get(key) is not True]
             if review.get("is_gta6_footage") is not True:
                 reasons.append("GTA VI gameplay not confirmed")
             if review.get("is_spoiler"):
@@ -149,6 +162,7 @@ def main():
         if info["width"] * 16 != info["height"] * 9 or info["duration"] > 180:
             raise RuntimeError("Rendered preview exceeds Shorts duration or has the wrong aspect ratio.")
         summary(f"Selected clip: {clip['url']} ({start:.1f}–{end:.1f}s)")
+        summary("Suggested caption: Kai Cenat during the GTA 6 marathon. #KAICENAT")
         summary(f"Downloaded resolution: {info['width']}x{info['height']}")
         with open(os.environ["GITHUB_OUTPUT"], "a") as out:
             print("ready=true", file=out)
