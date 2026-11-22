@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       clip_group:
-        description: 'Clip group (1 = ranks 1-9, 2 = ranks 10-18)'
+        description: 'Unreviewed clip group (1 = ranks 1-9, 2 = ranks 10-18)'
         type: choice
         options:
           - '1'
@@ -22,7 +22,11 @@ on:
         default: '1'
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: kai-preview-review-history
+  cancel-in-progress: false
 
 jobs:
   preview:
@@ -30,6 +34,15 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Load reviewed Twitch clip IDs
+        uses: actions/checkout@v4
+        with:
+          ref: kai-review-history
+          path: review-history
+          sparse-checkout: reviewed-clips.txt
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -72,9 +85,20 @@ jobs:
       - name: Review and trim the best moment
         id: review
         env:
+          KAI_REVIEW_HISTORY: review-history/reviewed-clips.txt
           CLIP_GROUP: ${{ inputs.clip_group }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python kai_preview.py
+
+      - name: Persist completed reviews
+        if: always() && steps.review.outcome != 'skipped'
+        working-directory: review-history
+        run: |
+          set -euo pipefail
+          git diff --quiet -- reviewed-clips.txt && exit 0
+          git add -- reviewed-clips.txt
+          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com commit -m "Record completed Kai clip reviews"
+          git push origin HEAD:kai-review-history
 
       - name: Save preview
         if: steps.review.outputs.ready == 'true'
