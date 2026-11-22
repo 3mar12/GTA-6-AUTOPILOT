@@ -83,7 +83,12 @@ def main():
     # Helix timestamps are UTC. Clip creation is an initial filter, not proof of VOD age.
     clips = [clip for clip in clips if clip["created_at"][:10] >= "2026-11-18"]
     now = datetime.now(timezone.utc)
-    shortlist = sorted(clips, key=lambda c: views_per_hour(c, now), reverse=True)[:9]
+    group = int(os.getenv("CLIP_GROUP") or "1")
+    if not 1 <= group <= 12:
+        raise ValueError("Clip group must be between 1 and 12.")
+    offset = (group - 1) * 9
+    shortlist = sorted(clips, key=lambda c: views_per_hour(c, now), reverse=True)[offset:offset + 9]
+    summary(f"Review group: {group}.")
     summary(f"Matching clips: {len(clips)}. Review limit (batches of 3 by views/hour): {len(shortlist)}.")
     if shortlist and not os.environ.get("GEMINI_API_KEY", "").strip():
         summary("Missing GEMINI_API_KEY for clip review.")
@@ -129,7 +134,13 @@ def main():
             if review.get("is_spoiler"):
                 reasons.append("story spoiler")
             if review.get("sexual_content_status") != "clear":
-                reasons.append("nudity or sexual scenes detected or not ruled out")
+                status = review.get("sexual_content_status")
+                if status == "present":
+                    reasons.append("review flagged nudity or sexual content")
+                elif status == "uncertain":
+                    reasons.append("review could not rule out nudity or sexual content")
+                else:
+                    reasons.append("missing or invalid sexual-content review")
             if review.get("unsafe") is not False:
                 reasons.append("flagged by content review")
             if review.get("is_english") is False:
