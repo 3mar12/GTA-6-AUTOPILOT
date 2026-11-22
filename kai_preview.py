@@ -82,12 +82,19 @@ def main():
     clips = json.loads(Path("candidates.json").read_text())
     # Helix timestamps are UTC. Clip creation is an initial filter, not proof of VOD age.
     clips = [clip for clip in clips if clip["created_at"][:10] >= "2026-11-18"]
+    history = Path(os.environ["KAI_REVIEW_HISTORY"]) if "KAI_REVIEW_HISTORY" in os.environ else None
+    seen = set(history.read_text().splitlines()) if history else set()
+    unseen = {}
+    for clip in clips:
+        if clip["id"] not in seen:
+            unseen.setdefault(clip["id"], clip)
+    summary(f"Previously reviewed clips skipped: {sum(c['id'] in seen for c in clips)}.")
     now = datetime.now(timezone.utc)
     group = int(os.getenv("CLIP_GROUP") or "1")
     if not 1 <= group <= 12:
         raise ValueError("Clip group must be between 1 and 12.")
     offset = (group - 1) * 9
-    shortlist = sorted(clips, key=lambda c: views_per_hour(c, now), reverse=True)[offset:offset + 9]
+    shortlist = sorted(unseen.values(), key=lambda c: views_per_hour(c, now), reverse=True)[offset:offset + 9]
     summary(f"Review group: {group}.")
     summary(f"Matching clips: {len(clips)}. Review limit (batches of 3 by views/hour): {len(shortlist)}.")
     if shortlist and not os.environ.get("GEMINI_API_KEY", "").strip():
@@ -106,6 +113,9 @@ def main():
                 path, = base.parent.glob(base.name + ".*")
                 info = probe(path)
                 if not info["has_audio"]:
+                    if history:
+                        with history.open("a", encoding="utf-8") as out:
+                            print(clip["id"], file=out)
                     summary(f"Candidate {index + 1}: no readable audio stream.")
                     continue
                 review = ai_review(path, {**clip, "streamer": "Kai Cenat", "platform": "twitch"}, LAYOUT_PROMPT)
@@ -121,6 +131,9 @@ def main():
             except (subprocess.CalledProcessError, ValueError, TypeError, KeyError) as exc:
                 summary(f"Skipping candidate {index + 1}: {type(exc).__name__}")
                 continue
+            if history:
+                with history.open("a", encoding="utf-8") as out:
+                    print(clip["id"], file=out)
             reviewed += 1
             rate = views_per_hour(clip, now)
             summary(f"- {clip['url']} — {rate:.0f} views/hour, moment score {score}/10.")
