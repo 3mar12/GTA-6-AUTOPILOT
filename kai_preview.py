@@ -78,6 +78,25 @@ def views_per_hour(clip, now):
 
 
 
+def youtube_error(exc):
+    if isinstance(exc, subprocess.TimeoutExpired):
+        return "request timed out"
+    detail = (getattr(exc, "stderr", "") or "").lower()
+    for marker, reason in (
+        ("does not have a streams tab", "channel has no streams tab"),
+        ("not a bot", "YouTube requested sign-in verification"),
+        ("http error 429", "YouTube rate limit"),
+        ("http error 403", "YouTube denied access (403)"),
+        ("video unavailable", "video unavailable"),
+        ("requested format is not available", "no downloadable format"),
+    ):
+        if marker in detail:
+            return reason
+    if isinstance(exc, subprocess.CalledProcessError):
+        return f"yt-dlp exit {exc.returncode} (unclassified)"
+    return type(exc).__name__
+
+
 def youtube_metadata(args):
     result = subprocess.run(_ytdlp_base() + args, capture_output=True, text=True,
                             timeout=45, check=True)
@@ -91,7 +110,7 @@ def youtube_candidates():
         try:
             page = youtube_metadata(["--flat-playlist", "--playlist-end", "30", "-J", f"{channel}/{tab}"])
         except (subprocess.SubprocessError, ValueError) as exc:
-            summary(f"YouTube {tab} listing unavailable: {type(exc).__name__}.")
+            summary(f"YouTube {tab} listing unavailable: {youtube_error(exc)}.")
             continue
         for entry in page.get("entries") or []:
             if entry and GTA6_RE.search(entry.get("title") or ""):
@@ -100,7 +119,7 @@ def youtube_candidates():
     for video_id in list(entries)[:6]:
         url = f"https://www.youtube.com/watch?v={video_id}"
         try:
-            meta = youtube_metadata(["--no-playlist", "-J", url])
+            meta = youtube_metadata(["--no-playlist", "--ignore-no-formats-error", "-J", url])
             timestamp = meta.get("release_timestamp") or meta.get("timestamp")
             duration = int(meta.get("duration") or 0)
             if not timestamp or duration < 1 or meta.get("live_status") in ("is_upcoming", "is_live"):
@@ -117,7 +136,7 @@ def youtube_candidates():
                           "view_count": int(meta.get("view_count") or 0), "created_at": created,
                           "section": (start, min(duration, start + 60))})
         except (subprocess.SubprocessError, TypeError, ValueError) as exc:
-            summary(f"YouTube metadata unavailable for {url}: {type(exc).__name__}.")
+            summary(f"YouTube metadata unavailable for {url}: {youtube_error(exc)}.")
     summary(f"YouTube candidates from @KaiCenatGaming: {len(clips)}.")
     return clips
 
