@@ -11,6 +11,11 @@ from stream_clips import ai_review
 
 
 LAYOUT_PROMPT = """
+Review the entire source clip, including gameplay, webcam, overlays and background.
+Return sexual_content_status="clear" only if you can confidently exclude nudity
+and sexual scenes throughout. Return "present" for any such imagery, even briefly,
+including animated game characters. Return "uncertain" for ambiguous imagery or
+incomplete visibility that prevents a decision. Evaluate this before trimming.
 In the same JSON, describe the visible layout throughout the chosen moment.
 Return layout="stacked" only when the webcam already spans the top of a vertical
 frame and gameplay fills the bottom. For a stable visible webcam and gameplay
@@ -110,7 +115,9 @@ def main():
                 reasons.append("GTA VI gameplay not confirmed")
             if review.get("is_spoiler"):
                 reasons.append("story spoiler")
-            if review.get("unsafe"):
+            if review.get("sexual_content_status") != "clear":
+                reasons.append("nudity or sexual scenes detected or not ruled out")
+            if review.get("unsafe") is not False:
                 reasons.append("flagged by content review")
             if review.get("is_english") is False:
                 reasons.append("non-English audio")
