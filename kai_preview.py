@@ -1,4 +1,4 @@
-"""Select a recent Kai highlight using Twitch velocity and audiovisual review."""
+"""Select a recent Kai highlight from Twitch and YouTube using view velocity and audiovisual review."""
 import json
 import os
 import subprocess
@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from common import WORK_DIR, probe, setup_logging
-from stream_clips import ai_review
+from stream_clips import GTA6_RE, ai_review
+from source_fetcher import _ytdlp_base
 
 
 LAYOUT_PROMPT = """
@@ -76,10 +77,56 @@ def views_per_hour(clip, now):
     return clip["view_count"] / max(1, hours)
 
 
+
+def youtube_metadata(args):
+    result = subprocess.run(_ytdlp_base() + args, capture_output=True, text=True,
+                            timeout=45, check=True)
+    return json.loads(result.stdout)
+
+
+def youtube_candidates():
+    channel = "https://www.youtube.com/@KaiCenatGaming"
+    entries = {}
+    for tab in ("streams", "videos"):
+        try:
+            page = youtube_metadata(["--flat-playlist", "--playlist-end", "30", "-J", f"{channel}/{tab}"])
+        except (subprocess.SubprocessError, ValueError) as exc:
+            summary(f"YouTube {tab} listing unavailable: {type(exc).__name__}.")
+            continue
+        for entry in page.get("entries") or []:
+            if entry and GTA6_RE.search(entry.get("title") or ""):
+                entries.setdefault(entry["id"], entry)
+    clips = []
+    for video_id in list(entries)[:6]:
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        try:
+            meta = youtube_metadata(["--no-playlist", "-J", url])
+            timestamp = meta.get("release_timestamp") or meta.get("timestamp")
+            duration = int(meta.get("duration") or 0)
+            if not timestamp or duration < 1 or meta.get("live_status") in ("is_upcoming", "is_live"):
+                continue
+            created = datetime.fromtimestamp(timestamp, timezone.utc).isoformat()
+            if created[:10] < "2026-11-18":
+                continue
+            peaks = meta.get("heatmap") or []
+            peak = max(peaks, key=lambda p: p.get("value") or 0) if peaks else {}
+            center = int(peak.get("start_time") or duration // 2)
+            start = max(0, min(center - 30, duration - 60))
+            clips.append({"platform": "youtube", "id": f"youtube:{video_id}@{start}",
+                          "url": url, "title": meta.get("title") or "",
+                          "view_count": int(meta.get("view_count") or 0), "created_at": created,
+                          "section": (start, min(duration, start + 60))})
+        except (subprocess.SubprocessError, TypeError, ValueError) as exc:
+            summary(f"YouTube metadata unavailable for {url}: {type(exc).__name__}.")
+    summary(f"YouTube candidates from @KaiCenatGaming: {len(clips)}.")
+    return clips
+
+
 def main():
     setup_logging()
     WORK_DIR.mkdir(parents=True, exist_ok=True)
     clips = json.loads(Path("candidates.json").read_text())
+    clips.extend(youtube_candidates())
     # Helix timestamps are UTC. Clip creation is an initial filter, not proof of VOD age.
     clips = [clip for clip in clips if clip["created_at"][:10] >= "2026-11-18"]
     history = Path(os.environ["KAI_REVIEW_HISTORY"]) if "KAI_REVIEW_HISTORY" in os.environ else None
@@ -108,7 +155,11 @@ def main():
                 break
             base = Path(folder) / str(index)
             try:
-                subprocess.run(["yt-dlp", "--no-playlist", "-S", "res,fps,br", "-o",
+                command = ["yt-dlp"]
+                if clip.get("platform") == "youtube":
+                    first, last = clip["section"]
+                    command = _ytdlp_base() + ["--download-sections", f"*{first}-{last}", "--force-keyframes-at-cuts"]
+                subprocess.run(command + [ "--no-playlist", "-S", "res,fps,br", "-o",
                                 str(base) + ".%(ext)s", "--", clip["url"]], check=True)
                 path, = base.parent.glob(base.name + ".*")
                 info = probe(path)
@@ -118,7 +169,7 @@ def main():
                             print(clip["id"], file=out)
                     summary(f"Candidate {index + 1}: no readable audio stream.")
                     continue
-                review = ai_review(path, {**clip, "streamer": "Kai Cenat", "platform": "twitch"}, LAYOUT_PROMPT)
+                review = ai_review(path, {**clip, "streamer": "Kai Cenat", "platform": clip.get("platform", "twitch")}, LAYOUT_PROMPT)
                 if not review:
                     summary(f"Candidate {index + 1}: Gemini returned no video review. See the review step log.")
                     continue
@@ -185,7 +236,8 @@ def main():
             raise RuntimeError("Preview is missing audio or has no duration.")
         if info["width"] * 16 != info["height"] * 9 or info["duration"] > 180:
             raise RuntimeError("Rendered preview exceeds Shorts duration or has the wrong aspect ratio.")
-        summary(f"Selected clip: {clip['url']} ({start:.1f}–{end:.1f}s)")
+        source_offset = clip.get("section", (0,))[0]
+        summary(f"Selected clip: {clip['url']} ({source_offset + start:.1f}–{source_offset + end:.1f}s)")
         summary("Suggested caption: Kai Cenat during the GTA 6 marathon. #KAICENAT")
         summary(f"Downloaded resolution: {info['width']}x{info['height']}")
         with open(os.environ["GITHUB_OUTPUT"], "a") as out:
