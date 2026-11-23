@@ -1,6 +1,7 @@
 """Select a recent Kai highlight from Twitch and YouTube using view velocity and audiovisual review."""
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 from datetime import datetime, timezone
@@ -17,11 +18,10 @@ Return sexual_content_status="clear" only if you can confidently exclude nudity
 and sexual scenes throughout. Return "present" for any such imagery, even briefly,
 including animated game characters. Return "uncertain" for ambiguous imagery or
 incomplete visibility that prevents a decision. Evaluate this before trimming.
-Also return kai_primary, no_logos and fair_portrayal as JSON booleans.
+Also return kai_primary and fair_portrayal as JSON booleans.
 Evaluate the entire proposed cut including one second of extra context at each end.
 kai_primary is true only if Kai is present in the edit itself and his reaction,
-quote or action is its primary focus beyond the intro. no_logos requires no
-visible logos or watermarks anywhere in the cut. fair_portrayal requires the cut
+quote or action is its primary focus beyond the intro. fair_portrayal requires the cut
 to preserve context and avoid negative portrayals, hate farming or false narratives.
 For any of these checks use false when uncertain.
 In the same JSON, describe the visible layout throughout the chosen moment.
@@ -30,7 +30,7 @@ frame and gameplay fills the bottom. For a stable visible webcam and gameplay
 in another arrangement return layout="crop", with camera_box and game_box.
 Both boxes are [left, top, right, bottom] in 0..1000 coordinates of the entire
 frame. Include the streamer's whole webcam panel and choose a separate contiguous
-gameplay region around the action, excluding the webcam. If either panel is
+gameplay region around the action, excluding the webcam, platform logos and viewer counter. If either panel is
 missing, changes position during the moment, or is unclear, return layout="unknown".
 """
 
@@ -209,7 +209,6 @@ def main():
             summary(f"- {clip['url']} — {rate:.0f} views/hour, moment score {score}/10.")
             reasons = [reason for key, reason in (
                 ("kai_primary", "Kai not confirmed as primary focus"),
-                ("no_logos", "logo-free edit not confirmed"),
                 ("fair_portrayal", "fair portrayal not confirmed"),
             ) if review.get(key) is not True]
             if review.get("is_gta6_footage") is not True:
@@ -236,25 +235,36 @@ def main():
                 summary(f"Candidate {index + 1}: no reliable camera/gameplay layout.")
                 continue
             rank = (score, rate)
-            if best is None or rank > best[0]:
-                best = (rank, path, start, end, clip, filters)
+            if best is not None and rank <= best[0]:
+                continue
+            end = min(end, start + 179)
+            output = Path(folder) / f"rendered-{index}.mp4"
+            subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", str(start), "-i", str(path),
+                            "-t", str(end - start), "-filter_complex", filters, "-map", "[out]", "-map", "0:a:0", "-pix_fmt", "yuv420p", "-c:v", "libx264",
+                            "-preset", "veryfast", "-crf", "17", "-c:a", "aac", "-b:a", "192k",
+                            "-movflags", "+faststart", str(output)], check=True)
+            info = probe(output)
+            if not info["has_audio"] or info["duration"] <= 0:
+                raise RuntimeError("Preview is missing audio or has no duration.")
+            if info["width"] * 16 != info["height"] * 9 or info["duration"] > 180:
+                raise RuntimeError("Rendered preview exceeds Shorts duration or has the wrong aspect ratio.")
+            final_review = ai_review(
+                output, {**clip, "streamer": "Kai Cenat", "platform": clip.get("platform", "twitch")},
+                "\nInspect the entire rendered video including both panels and all edges. "
+                "Return no_logos as a JSON boolean. Return true only if the entire video "
+                "is free of visible logos and watermarks. Return false if uncertain.",
+            )
+            if not final_review or final_review.get("no_logos") is not True:
+                summary(f"Candidate {index + 1}: logo-free final edit not confirmed.")
+                continue
+            best = (rank, output, start, end, clip, info)
         if shortlist and not reviewed:
             raise RuntimeError("Could not download and review any shortlisted clip.")
         if best is None:
             summary("No eligible GTA VI moment found.")
             return
-        _, path, start, end, clip, filters = best
-        end = min(end, start + 179)
-        output = Path("kai-preview.mp4")
-        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", str(start), "-i", str(path),
-                        "-t", str(end - start), "-filter_complex", filters, "-map", "[out]", "-map", "0:a:0", "-pix_fmt", "yuv420p", "-c:v", "libx264",
-                        "-preset", "veryfast", "-crf", "17", "-c:a", "aac", "-b:a", "192k",
-                        "-movflags", "+faststart", str(output)], check=True)
-        info = probe(output)
-        if not info["has_audio"] or info["duration"] <= 0:
-            raise RuntimeError("Preview is missing audio or has no duration.")
-        if info["width"] * 16 != info["height"] * 9 or info["duration"] > 180:
-            raise RuntimeError("Rendered preview exceeds Shorts duration or has the wrong aspect ratio.")
+        _, rendered, start, end, clip, info = best
+        shutil.copyfile(rendered, "kai-preview.mp4")
         source_offset = clip.get("section", (0,))[0]
         summary(f"Selected clip: {clip['url']} ({source_offset + start:.1f}–{source_offset + end:.1f}s)")
         summary("Suggested caption: Kai Cenat during the GTA 6 marathon. #KAICENAT")
