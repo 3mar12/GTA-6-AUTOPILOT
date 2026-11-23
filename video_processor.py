@@ -453,7 +453,7 @@ def _group_words(words: list[dict], max_words: int = 3, max_chars: int = 16) -> 
     return groups
 
 
-def build_ass(path: Path, banner: str, words: list[dict], total: float, cta: str) -> None:
+def build_ass(path: Path, banner: str, words: list[dict], total: float, cta: str, *, caption_y: int | None = None) -> None:
     vcfg = load_config().get("video", {})
     font = vcfg.get("font", "Montserrat")
     hl = vcfg.get("highlight_color_ass", "&H0000F0FF")  # BGR -> yellow
@@ -475,7 +475,7 @@ Style: CTA,{font},46,&H00FFFFFF,&H00FFFFFF,&H00000000,&HA0000000,-1,0,0,0,100,10
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     lines = [f"Dialogue: 2,{_ass_time(0)},{_ass_time(total)},Banner,,0,0,0,,{{\\fad(250,0)}}{wrapped}"]
-    y = int(vcfg.get("caption_y", 1450))
+    y = int(vcfg.get("caption_y", 1450)) if caption_y is None else caption_y
     for group in _group_words(words):
         g_start = group[0]["start"]
         g_end_final = group[-1]["end"]
