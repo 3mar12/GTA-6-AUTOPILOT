@@ -1,6 +1,7 @@
 """Select a recent Kai highlight from Twitch and YouTube using view velocity and audiovisual review."""
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -64,6 +65,16 @@ def layout_filter(review, info):
                       f"scale=1080:{panel_height}:force_original_aspect_ratio=increase,"
                       f"crop=1080:{panel_height},setsar=1[{name}out]")
     return ";".join(["[0:v]split[cam][game]", *panels, "[camout][gameout]vstack[out]"])
+
+
+def has_audible_audio(path):
+    result = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-nostats", "-i", str(path), "-map", "0:a:0",
+         "-af", "volumedetect", "-f", "null", "-"],
+        capture_output=True, text=True,
+    )
+    peak = re.search(r"max_volume:\s*(-?\d+(?:\.\d+)?) dB", result.stderr)
+    return result.returncode == 0 and peak is not None and float(peak[1]) > -60
 
 
 def summary(message):
@@ -245,6 +256,9 @@ def main():
                 raise RuntimeError("Preview is missing audio or has no duration.")
             if info["width"] * 16 != info["height"] * 9 or info["duration"] > 180:
                 raise RuntimeError("Rendered preview exceeds Shorts duration or has the wrong aspect ratio.")
+            if not has_audible_audio(output):
+                summary(f"Candidate {index + 1}: final edit is silent or has no verifiable audible signal.")
+                continue
             final_review = ai_review(
                 output, {**clip, "streamer": "Kai Cenat", "platform": clip.get("platform", "twitch")},
                 "\nInspect the entire rendered video including both panels and all edges. "
