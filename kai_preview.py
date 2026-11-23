@@ -166,12 +166,10 @@ def main():
     if shortlist and not os.environ.get("GEMINI_API_KEY", "").strip():
         summary("Missing GEMINI_API_KEY for clip review.")
         raise RuntimeError("Missing GEMINI_API_KEY for clip review.")
-    best = None
+    selected = []
     reviewed = 0
     with tempfile.TemporaryDirectory() as folder:
         for index, clip in enumerate(shortlist):
-            if index and index % 3 == 0 and best is not None:
-                break
             base = Path(folder) / str(index)
             try:
                 command = ["yt-dlp"]
@@ -232,11 +230,10 @@ def main():
                 continue
             filters = layout_filter(review, info)
             if not filters:
-                summary(f"Candidate {index + 1}: no reliable camera/gameplay layout.")
-                continue
+                # Preserve the full composition when the webcam moves or no split is suitable.
+                filters = ("[0:v]scale=1080:1920:force_original_aspect_ratio=decrease:"
+                           "force_divisible_by=2,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1[out]")
             rank = (score, rate)
-            if best is not None and rank <= best[0]:
-                continue
             end = min(end, start + 179)
             output = Path(folder) / f"rendered-{index}.mp4"
             subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", str(start), "-i", str(path),
@@ -251,24 +248,31 @@ def main():
             final_review = ai_review(
                 output, {**clip, "streamer": "Kai Cenat", "platform": clip.get("platform", "twitch")},
                 "\nInspect the entire rendered video including both panels and all edges. "
-                "Return no_logos as a JSON boolean. Return true only if the entire video "
-                "is free of visible logos and watermarks. Return false if uncertain.",
+                "Classify branding in JSON as branding: clean, kai_platform_only, other or uncertain. "
+                "kai_platform_only means the only logos are native YouTube/Twitch badges belonging "
+                "to Kai’s own channel overlay. For any other logo use other; if unclear use uncertain.",
             )
-            if not final_review or final_review.get("no_logos") is not True:
+            branding = (final_review or {}).get("branding")
+            if branding not in ("clean", "kai_platform_only"):
                 summary(f"Candidate {index + 1}: logo-free final edit not confirmed.")
                 continue
-            best = (rank, output, start, end, clip, info)
+            selected.append((rank, output, start, end, clip, info, branding))
+            if len(selected) >= 3:
+                break
         if shortlist and not reviewed:
             raise RuntimeError("Could not download and review any shortlisted clip.")
-        if best is None:
+        if not selected:
             summary("No eligible GTA VI moment found.")
             return
-        _, rendered, start, end, clip, info = best
-        shutil.copyfile(rendered, "kai-preview.mp4")
-        source_offset = clip.get("section", (0,))[0]
-        summary(f"Selected clip: {clip['url']} ({source_offset + start:.1f}–{source_offset + end:.1f}s)")
+        summary(f"Previews created: {len(selected)}.")
+        for number, (_, rendered, start, end, clip, info, branding) in enumerate(
+            sorted(selected, key=lambda result: result[0], reverse=True), 1
+        ):
+            name = "kai-preview.mp4" if number == 1 else f"kai-preview-{number}.mp4"
+            shutil.copyfile(rendered, name)
+            source_offset = clip.get("section", (0,))[0]
+            summary(f"{name}: {clip['url']} ({source_offset + start:.1f}–{source_offset + end:.1f}s). Branding: {branding}.")
         summary("Suggested caption: Kai Cenat during the GTA 6 marathon. #KAICENAT")
-        summary(f"Downloaded resolution: {info['width']}x{info['height']}")
         with open(os.environ["GITHUB_OUTPUT"], "a") as out:
             print("ready=true", file=out)
 
