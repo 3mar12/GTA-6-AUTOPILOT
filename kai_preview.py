@@ -32,8 +32,7 @@ Return layout="stacked" only when the webcam already spans the top of a vertical
 frame, Kai is horizontally centered there, and gameplay fills the bottom. If he is off-center, use crop even for vertical sources. For a stable visible webcam and gameplay
 in another arrangement return layout="crop", with camera_box and game_box.
 Both boxes are [left, top, right, bottom] in 0..1000 coordinates of the entire
-frame. Provide face_center_x, the typical horizontal center of Kai’s face during this moment, in 0..1000 coordinates of the FULL frame. Keep his head and shoulders visible when choosing camera_box and choose a separate contiguous
-gameplay region around the action, excluding the webcam, platform logos and viewer counter. If either panel is
+frame. Provide face_center_x, the typical horizontal center of Kai’s face during this moment, in 0..1000 coordinates of the FULL frame. Use the entire webcam panel for camera_box, including his head and shoulders through the cut. For game_box use the widest visible gameplay area, never a tight box around a player or object. If the webcam overlays the game, game_box may include the overlay. If either panel is
 missing, changes position during the moment, or is unclear, return layout="unknown".
 """
 
@@ -58,25 +57,28 @@ def layout_filter(review, info):
     game = crop_box(review.get("game_box"), width, height)
     if review.get("layout") != "crop" or not camera or not game:
         return None
-    if max(camera[0], game[0]) < min(camera[2], game[2]) and max(camera[1], game[1]) < min(camera[3], game[3]):
+    anchor = review.get("face_center_x")
+    if type(anchor) not in (int, float) or not 0 <= anchor <= 1000:
         return None
-    panels = []
-    for name, box, panel_height in (("cam", camera, 640), ("game", game, 1280)):
-        left, top, right, bottom = box
-        if name == "cam":
-            anchor = review.get("face_center_x")
-            if type(anchor) in (int, float) and 0 <= anchor <= 1000:
-                center = round(anchor * width / 1000)
-                if left < center < right:
-                    # Narrow the panel symmetrically where possible without excessive zoom.
-                    span = min(right - left, max((right - left) * 2 // 3,
-                               2 * min(center - left, right - center))) // 2 * 2
-                    left = max(left, min(right - span, center - span // 2)) // 2 * 2
-                    right = left + span
-        panels.append(f"[{name}]crop={right-left}:{bottom-top}:{left}:{top},"
-                      f"scale=1080:{panel_height}:force_original_aspect_ratio=increase,"
-                      f"crop=1080:{panel_height},setsar=1[{name}out]")
-    return ";".join(["[0:v]split[cam][game]", *panels, "[camout][gameout]vstack[out]"])
+    left, top, right, bottom = camera
+    center = round(anchor * width / 1000) - left
+    cam_width = right - left
+    if not 0 < center < cam_width:
+        return None
+    # Extend the shorter side so the face lands at the midpoint without cutting either edge.
+    half = max(center, cam_width - center)
+    cam = (f"[cam]crop={cam_width}:{bottom-top}:{left}:{top},"
+           f"pad={2*half}:ih:{half-center}:0,"
+           "scale=1080:640:force_original_aspect_ratio=decrease:force_divisible_by=2,"
+           "pad=1080:640:(ow-iw)/2:(oh-ih)/2,setsar=1[camout]")
+    left, top, right, bottom = game
+    if right - left < width * 0.65:
+        return None  # Use the whole broadcast instead of enlarging a narrow gameplay crop.
+    gameplay = (f"[game]crop={right-left}:{bottom-top}:{left}:{top},"
+                "scale=1080:1280:force_original_aspect_ratio=decrease:force_divisible_by=2,"
+                "pad=1080:1280:(ow-iw)/2:(oh-ih)/2,setsar=1[gameout]")
+    return ";".join(["[0:v]split[cam][game]", cam, gameplay, "[camout][gameout]vstack[out]"])
+
 
 
 def has_audible_audio(path):
