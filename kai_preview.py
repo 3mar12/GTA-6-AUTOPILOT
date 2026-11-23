@@ -29,10 +29,10 @@ to preserve context and avoid negative portrayals, hate farming or false narrati
 For any of these checks use false when uncertain.
 In the same JSON, describe the visible layout throughout the chosen moment.
 Return layout="stacked" only when the webcam already spans the top of a vertical
-frame and gameplay fills the bottom. For a stable visible webcam and gameplay
+frame, Kai is horizontally centered there, and gameplay fills the bottom. If he is off-center, use crop even for vertical sources. For a stable visible webcam and gameplay
 in another arrangement return layout="crop", with camera_box and game_box.
 Both boxes are [left, top, right, bottom] in 0..1000 coordinates of the entire
-frame. Include the streamer's whole webcam panel and choose a separate contiguous
+frame. Provide face_center_x, the typical horizontal center of Kai’s face during this moment, in 0..1000 coordinates of the FULL frame. Keep his head and shoulders visible when choosing camera_box and choose a separate contiguous
 gameplay region around the action, excluding the webcam, platform logos and viewer counter. If either panel is
 missing, changes position during the moment, or is unclear, return layout="unknown".
 """
@@ -63,6 +63,16 @@ def layout_filter(review, info):
     panels = []
     for name, box, panel_height in (("cam", camera, 640), ("game", game, 1280)):
         left, top, right, bottom = box
+        if name == "cam":
+            anchor = review.get("face_center_x")
+            if type(anchor) in (int, float) and 0 <= anchor <= 1000:
+                center = round(anchor * width / 1000)
+                if left < center < right:
+                    # Narrow the panel symmetrically where possible without excessive zoom.
+                    span = min(right - left, max((right - left) * 2 // 3,
+                               2 * min(center - left, right - center))) // 2 * 2
+                    left = max(left, min(right - span, center - span // 2)) // 2 * 2
+                    right = left + span
         panels.append(f"[{name}]crop={right-left}:{bottom-top}:{left}:{top},"
                       f"scale=1080:{panel_height}:force_original_aspect_ratio=increase,"
                       f"crop=1080:{panel_height},setsar=1[{name}out]")
@@ -251,7 +261,7 @@ def main():
             words = subtitle_words(review.get("transcript"), start, end - start)
             if words:
                 captions = Path(folder) / f"captions-{index}.ass"
-                build_ass(captions, "", words, end - start, "")
+                build_ass(captions, "", words, end - start, "", caption_y=850)
                 filters += f";[out]ass={captions}[captioned]"
             output = Path(folder) / f"rendered-{index}.mp4"
             subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", str(start), "-i", str(path),
