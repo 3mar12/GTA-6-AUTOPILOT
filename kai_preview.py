@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from common import WORK_DIR, probe, setup_logging
-from stream_clips import GTA6_RE, ai_review
+from stream_clips import GTA6_RE, ai_review, subtitle_words
+from video_processor import build_ass
 from source_fetcher import _ytdlp_base
 
 
@@ -19,6 +20,7 @@ Return sexual_content_status="clear" only if you can confidently exclude nudity
 and sexual scenes throughout. Return "present" for any such imagery, even briefly,
 including animated game characters. Return "uncertain" for ambiguous imagery or
 incomplete visibility that prevents a decision. Evaluate this before trimming.
+For transcript, use only clearly audible words spoken by Kai in English, with phrase start/end seconds relative to the source clip. Omit silence, game dialogue and unclear speech. Use [] when Kai does not speak clearly.
 Also return kai_primary and fair_portrayal as JSON booleans.
 Evaluate the entire proposed cut including one second of extra context at each end.
 kai_primary is true only if Kai is present in the edit itself and his reaction,
@@ -246,9 +248,14 @@ def main():
                            "force_divisible_by=2,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1[out]")
             rank = (score, rate)
             end = min(end, start + 179)
+            words = subtitle_words(review.get("transcript"), start, end - start)
+            if words:
+                captions = Path(folder) / f"captions-{index}.ass"
+                build_ass(captions, "", words, end - start, "")
+                filters += f";[out]ass={captions}[captioned]"
             output = Path(folder) / f"rendered-{index}.mp4"
             subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", str(start), "-i", str(path),
-                            "-t", str(end - start), "-filter_complex", filters, "-map", "[out]", "-map", "0:a:0", "-pix_fmt", "yuv420p", "-c:v", "libx264",
+                            "-t", str(end - start), "-filter_complex", filters, "-map", "[captioned]" if words else "[out]", "-map", "0:a:0", "-pix_fmt", "yuv420p", "-c:v", "libx264",
                             "-preset", "veryfast", "-crf", "17", "-c:a", "aac", "-b:a", "192k",
                             "-movflags", "+faststart", str(output)], check=True)
             info = probe(output)
