@@ -29,10 +29,10 @@ to preserve context and avoid negative portrayals, hate farming or false narrati
 For any of these checks use false when uncertain.
 In the same JSON, describe the visible layout throughout the chosen moment.
 Return layout="stacked" only when the webcam already spans the top of a vertical
-frame, Kai is horizontally centered there, and gameplay fills the bottom. If he is off-center, use crop even for vertical sources. For a stable visible webcam and gameplay
+frame, Kai’s entire face from hairline to chin is visible and horizontally centered there, without a large empty band separating the panels, and gameplay fills the bottom. If he is off-center, use crop even for vertical sources. For a stable visible webcam and gameplay
 in another arrangement return layout="crop", with camera_box and game_box.
 Both boxes are [left, top, right, bottom] in 0..1000 coordinates of the entire
-frame. Provide face_center_x, the typical horizontal center of Kai’s face during this moment, in 0..1000 coordinates of the FULL frame. Use the entire webcam panel for camera_box, including his head and shoulders through the cut. For game_box use the widest visible gameplay area, never a tight box around a player or object. If the webcam overlays the game, game_box may include the overlay. If either panel is
+frame. Provide face_center_x, the typical horizontal center of Kai’s face during this moment, in 0..1000 coordinates of the FULL frame. Also return face_box in the same full-frame coordinates: enclose Kai’s entire head including hair and chin throughout the chosen moment. Use the entire webcam panel for camera_box, including his head and shoulders through the cut. For game_box use the widest visible gameplay area, never a tight box around a player or object. If the webcam overlays the game, game_box may include the overlay. If either panel is
 missing, changes position during the moment, or is unclear, return layout="unknown".
 """
 
@@ -57,27 +57,35 @@ def layout_filter(review, info):
     game = crop_box(review.get("game_box"), width, height)
     if review.get("layout") != "crop" or not camera or not game:
         return None
-    anchor = review.get("face_center_x")
-    if type(anchor) not in (int, float) or not 0 <= anchor <= 1000:
+    face = crop_box(review.get("face_box"), width, height)
+    if not face:
         return None
     left, top, right, bottom = camera
-    center = round(anchor * width / 1000) - left
-    cam_width = right - left
-    if not 0 < center < cam_width:
+    fx, fy, fr, fb = face
+    cx, cy = (fx + fr) // 2, (fy + fb) // 2
+    if not left <= cx <= right or not top <= cy <= bottom:
         return None
-    # Extend the shorter side so the face lands at the midpoint without cutting either edge.
-    half = max(center, cam_width - center)
-    cam = (f"[cam]crop={cam_width}:{bottom-top}:{left}:{top},"
-           f"pad={2*half}:ih:{half-center}:0,"
-           "scale=1080:640:force_original_aspect_ratio=decrease:force_divisible_by=2,"
-           "pad=1080:640:(ow-iw)/2:(oh-ih)/2,setsar=1[camout]")
+    # Keep the head and a little breathing room even if the estimated webcam ends at the chin.
+    margin = max(4, (fb - fy) // 8) // 2 * 2
+    left, right = max(0, min(left, fx-margin)), min(width, max(right, fr+margin))
+    top, bottom = max(0, min(top, fy-margin)), min(height, max(bottom, fb+margin))
+    half = max(cx-left, right-cx)
+    cam = (f"[cam]crop={right-left}:{bottom-top}:{left}:{top},"
+           f"pad={2*half}:ih:{half-(cx-left)}:0,"
+           "scale=1080:840:force_original_aspect_ratio=decrease:force_divisible_by=2,"
+           "pad=1080:ih:(ow-iw)/2:0,setsar=1[camout]")
     left, top, right, bottom = game
     if right - left < width * 0.65:
-        return None  # Use the whole broadcast instead of enlarging a narrow gameplay crop.
+        return None
     gameplay = (f"[game]crop={right-left}:{bottom-top}:{left}:{top},"
-                "scale=1080:1280:force_original_aspect_ratio=decrease:force_divisible_by=2,"
-                "pad=1080:1280:(ow-iw)/2:(oh-ih)/2,setsar=1[gameout]")
-    return ";".join(["[0:v]split[cam][game]", cam, gameplay, "[camout][gameout]vstack[out]"])
+                "scale=1080:1080:force_original_aspect_ratio=decrease:force_divisible_by=2,"
+                "pad=1080:ih:(ow-iw)/2:0,setsar=1[gameout]")
+    # Join the two images first. Fill only the space outside the combined stack.
+    background = ("[bg]scale=270:480:force_original_aspect_ratio=increase,crop=270:480,"
+                  "boxblur=14:2,eq=brightness=-0.12,scale=1080:1920,setsar=1[back]")
+    return ";".join(["[0:v]split=3[cam][game][bg]", cam, gameplay, background,
+                     "[camout][gameout]vstack[stack]",
+                     "[back][stack]overlay=0:(H-h)/2,setsar=1[out]"])
 
 
 
@@ -281,6 +289,8 @@ def main():
             final_review = ai_review(
                 output, {**clip, "streamer": "Kai Cenat", "platform": clip.get("platform", "twitch")},
                 "\nInspect the entire rendered video including both panels and all edges. "
+                "Return framing_ok as true only if Kai’s face (including mouth and chin) is visible "
+                "during his reaction and there is no large blank divider between webcam and gameplay. "
                 "Classify branding in JSON as branding: clean, kai_platform_only, other or uncertain. "
                 "kai_platform_only means the only logos are native YouTube/Twitch badges belonging "
                 "to Kai’s own channel overlay. For any other logo use other; if unclear use uncertain.",
@@ -288,6 +298,9 @@ def main():
             branding = (final_review or {}).get("branding")
             if branding not in ("clean", "kai_platform_only"):
                 summary(f"Candidate {index + 1}: logo-free final edit not confirmed.")
+                continue
+            if final_review.get("framing_ok") is not True:
+                summary(f"Candidate {index + 1}: full face and clear framing not confirmed.")
                 continue
             selected.append((rank, output, start, end, clip, info, branding))
             if len(selected) >= 3:
