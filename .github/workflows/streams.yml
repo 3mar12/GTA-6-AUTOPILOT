@@ -1,4 +1,4 @@
-name: Preview Kai Cenat GTA VI clip
+name: Preview Kai Cenat GTA clip
 
 on:
   workflow_dispatch:
@@ -46,7 +46,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Find a recent GTA VI clip from Kai Cenat
+      - name: Find a recent GTA clip from Kai Cenat
         env:
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
           TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
@@ -68,14 +68,13 @@ jobs:
           }
 
           channel=$(twitch users --data-urlencode 'login=kaicenat' | jq -er '.data[0].id')
-          game=$(twitch games --data-urlencode 'name=Grand Theft Auto VI' | jq -er '.data[0].id')
           clips=$(twitch clips \
             --data-urlencode "broadcaster_id=$channel" \
             --data-urlencode "started_at=$(date -u -d '7 days ago' +%FT%TZ)" \
             --data-urlencode "ended_at=$(date -u +%FT%TZ)" \
             --data-urlencode 'first=100')
 
-          jq --arg game "$game" '[.data[] | select(.game_id == $game)]' <<< "$clips" > candidates.json
+          jq '.data' <<< "$clips" > candidates.json
 
       - name: Install preview tools
         run: |
