@@ -9,12 +9,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from common import WORK_DIR, probe, setup_logging
-from stream_clips import GTA6_RE, ai_review, subtitle_words
+from stream_clips import ai_review, subtitle_words
 from video_processor import build_ass
 from source_fetcher import _ytdlp_base
 
 
+GTA_TITLE = re.compile(r"\b(?:grand theft auto|gta)(?=\b|[0-9IVX])", re.IGNORECASE)
+
 LAYOUT_PROMPT = """
+For this Kai preview, eligible gameplay includes every Grand Theft Auto title, GTA Online and GTA RP.
+Return a separate boolean kai_playing_gta: true only when the video shows Kai actually playing GTA.
+An ordinary gameplay moment qualifies; watching a trailer or another player's footage does not.
+Native Twitch or YouTube logos on his broadcast are acceptable.
 Review the entire source clip, including gameplay, webcam, overlays and background.
 Return sexual_content_status="clear" only if you can confidently exclude nudity
 and sexual scenes throughout. Return "present" for any such imagery, even briefly,
@@ -146,7 +152,7 @@ def youtube_candidates():
             summary(f"YouTube {tab} listing unavailable: {youtube_error(exc)}.")
             continue
         for entry in page.get("entries") or []:
-            if entry and GTA6_RE.search(entry.get("title") or ""):
+            if entry and GTA_TITLE.search(entry.get("title") or ""):
                 entries.setdefault(entry["id"], entry)
     clips = []
     for video_id in list(entries)[:6]:
@@ -185,9 +191,9 @@ def main():
     seen = set(history.read_text().splitlines()) if history else set()
     unseen = {}
     for clip in clips:
-        if clip["id"] not in seen:
+        if "gta-family:" + clip["id"] not in seen:
             unseen.setdefault(clip["id"], clip)
-    summary(f"Previously reviewed clips skipped: {sum(c['id'] in seen for c in clips)}.")
+    summary(f"Previously reviewed clips skipped: {sum(('gta-family:' + c['id']) in seen for c in clips)}.")
     now = datetime.now(timezone.utc)
     group = int(os.getenv("CLIP_GROUP") or "1")
     if not 1 <= group <= 12:
@@ -216,7 +222,7 @@ def main():
                 if not info["has_audio"]:
                     if history:
                         with history.open("a", encoding="utf-8") as out:
-                            print(clip["id"], file=out)
+                            print("gta-family:" + clip["id"], file=out)
                     summary(f"Candidate {index + 1}: no readable audio stream.")
                     continue
                 review = ai_review(path, {**clip, "streamer": "Kai Cenat", "platform": clip.get("platform", "twitch")}, LAYOUT_PROMPT)
@@ -234,7 +240,7 @@ def main():
                 continue
             if history:
                 with history.open("a", encoding="utf-8") as out:
-                    print(clip["id"], file=out)
+                    print("gta-family:" + clip["id"], file=out)
             reviewed += 1
             rate = views_per_hour(clip, now)
             summary(f"- {clip['url']} — {rate:.0f} views/hour, moment score {score}/10.")
@@ -242,8 +248,8 @@ def main():
                 ("kai_primary", "Kai not confirmed as primary focus"),
                 ("fair_portrayal", "fair portrayal not confirmed"),
             ) if review.get(key) is not True]
-            if review.get("is_gta6_footage") is not True:
-                reasons.append("GTA VI gameplay not confirmed")
+            if review.get("kai_playing_gta") is not True:
+                reasons.append("Kai playing GTA not confirmed")
             if review.get("is_spoiler"):
                 reasons.append("story spoiler")
             if review.get("sexual_content_status") != "clear":
@@ -308,7 +314,7 @@ def main():
         if shortlist and not reviewed:
             raise RuntimeError("Could not download and review any shortlisted clip.")
         if not selected:
-            summary("No eligible GTA VI moment found.")
+            summary("No eligible Kai GTA moment found.")
             return
         summary(f"Previews created: {len(selected)}.")
         for number, (_, rendered, start, end, clip, info, branding) in enumerate(
@@ -318,7 +324,7 @@ def main():
             shutil.copyfile(rendered, name)
             source_offset = clip.get("section", (0,))[0]
             summary(f"{name}: {clip['url']} ({source_offset + start:.1f}–{source_offset + end:.1f}s). Branding: {branding}.")
-        summary("Suggested caption: Kai Cenat during the GTA 6 marathon. #KAICENAT")
+        summary("Suggested caption: Kai Cenat playing GTA. #KAICENAT")
         with open(os.environ["GITHUB_OUTPUT"], "a") as out:
             print("ready=true", file=out)
 
