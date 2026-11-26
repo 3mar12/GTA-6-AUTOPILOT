@@ -206,6 +206,7 @@ def main():
         summary("Missing GEMINI_API_KEY for clip review.")
         raise RuntimeError("Missing GEMINI_API_KEY for clip review.")
     selected = []
+    sample = None
     reviewed = 0
     with tempfile.TemporaryDirectory() as folder:
         for index, clip in enumerate(shortlist):
@@ -264,10 +265,12 @@ def main():
                 reasons.append("flagged by content review")
             if review.get("is_english") is False:
                 reasons.append("non-English audio")
+            filters = layout_filter(review, info)
             if reasons:
                 summary(f"Candidate {index + 1}: {', '.join(reasons)}.")
-                continue
-            filters = layout_filter(review, info)
+                if (sample or not filters or review.get("sexual_content_status") != "clear"
+                        or review.get("unsafe") is not False):
+                    continue
             if not filters:
                 # Preserve the full composition when the webcam moves or no split is suitable.
                 filters = ("[0:v]scale=1080:1920:force_original_aspect_ratio=decrease:"
@@ -292,6 +295,9 @@ def main():
             if not has_audible_audio(output):
                 summary(f"Candidate {index + 1}: final edit is silent or has no verifiable audible signal.")
                 continue
+            if reasons:
+                sample = (output, clip["url"])
+                continue
             final_review = ai_review(
                 output, {**clip, "streamer": "Kai Cenat", "platform": clip.get("platform", "twitch")},
                 "\nInspect the entire rendered video including both panels and all edges. "
@@ -313,6 +319,11 @@ def main():
                 break
         if shortlist and not reviewed:
             raise RuntimeError("Could not download and review any shortlisted clip.")
+        if not selected and sample:
+            rendered, url = sample
+            shutil.copyfile(rendered, "kai-layout-sample.mp4")
+            summary(f"Layout sample for viewing only (not campaign-approved): {url}")
+            return
         if not selected:
             summary("No eligible Kai GTA moment found.")
             return
