@@ -22,6 +22,7 @@ on:
         default: '1'
 
 permissions:
+  actions: read
   contents: write
 
 concurrency:
@@ -105,4 +106,35 @@ jobs:
         with:
           name: kai-twitch-preview
           path: 'kai-preview*.mp4'
+          if-no-files-found: error
+
+      - name: Recover a previous edited preview if no new sample is available
+        if: always() && !cancelled() && steps.review.outputs.ready != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ -s kai-layout-sample.mp4 ]] && exit 0
+          repo="repos/$GITHUB_REPOSITORY"
+          gh api "$repo/actions/artifacts?name=kai-twitch-preview&per_page=100" \
+            --jq '.artifacts[] | select(.expired == false and .workflow_run.head_branch == "main") | [.id, .workflow_run.head_sha] | @tsv' > "$RUNNER_TEMP/kai-artifacts"
+          while read -r artifact revision; do
+            # Earlier workflows saved raw Twitch downloads under the same artifact name.
+            gh api -H 'Accept: application/vnd.github.raw+json' "$repo/contents/kai_preview.py?ref=$revision" > "$RUNNER_TEMP/kai-old.py" || continue
+            grep -q 'framing_ok' "$RUNNER_TEMP/kai-old.py" || continue
+            gh api "$repo/actions/artifacts/$artifact/zip" > "$RUNNER_TEMP/kai-old.zip" || continue
+            if unzip -p "$RUNNER_TEMP/kai-old.zip" kai-preview.mp4 > "$RUNNER_TEMP/kai-old.mp4" && [[ -s "$RUNNER_TEMP/kai-old.mp4" ]]; then
+              mv "$RUNNER_TEMP/kai-old.mp4" kai-layout-sample.mp4
+              echo "No new sample available. Reusing a previously edited preview for viewing only (artifact $artifact)." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+          done < "$RUNNER_TEMP/kai-artifacts"
+          echo "No new layout sample or retained edited preview is available." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save layout sample for viewing only
+        if: always() && !cancelled() && steps.review.outputs.ready != 'true' && hashFiles('kai-layout-sample.mp4') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: kai-layout-sample-only
+          path: kai-layout-sample.mp4
           if-no-files-found: error
